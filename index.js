@@ -15,17 +15,37 @@ playerImage.src = "./images/playerDown.png";
 
 image.onload = () => {
   c.drawImage(image, -735, -600);
-  playerImage.onload = () => {
-    c.drawImage(
-      playerImage,
-      0,
-      0,
-      playerImage.width / 4,
-      playerImage.height,
-      canvas.width / 2 - playerImage.width / 8,
-      canvas.height / 2 - playerImage.height / 2,
-      playerImage.width / 4,
-      playerImage.height
-    );
-  };
+
+  c.drawImage(
+    playerImage,
+    0,
+    0,
+    playerImage.width / 4,
+    playerImage.height,
+    canvas.width / 2 - playerImage.width / 8,
+    canvas.height / 2 - playerImage.height / 2,
+    playerImage.width / 4,
+    playerImage.height
+  );
 };
+
+window.addEventListener("keydown", (e) => {
+  switch (e.key) {
+    case "w":
+    case "ArrowUp":
+      console.log("Pressed w");
+      break;
+    case "a":
+    case "ArrowLeft":
+      console.log("Pressed a");
+      break;
+    case "s":
+    case "ArrowDown":
+      console.log("Pressed s");
+      break;
+    case "d":
+    case "ArrowRight":
+      console.log("Pressed d");
+      break;
+  }
+});
