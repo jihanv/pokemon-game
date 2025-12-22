@@ -12,13 +12,14 @@ image.src = "./images/Pellet Town.png";
 
 c.drawImage(image, 0, 0);
 
-image.onload = () => {
-  c.drawImage(image, -750, -550);
-};
-
 const playerImage = new Image();
 playerImage.src = "./images/playerDown.png";
 
-playerImage.onload = () => {
-  c.drawImage(playerImage, 0, 0);
+image.onload = () => {
+  c.drawImage(image, -750, -550);
+  c.drawImage(
+    playerImage,
+    canvas.width / 2 - playerImage.width / 2,
+    canvas.height / 2 - playerImage.height / 2
+  );
 };
