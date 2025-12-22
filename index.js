@@ -13,7 +13,8 @@ image.src = "./images/Pellet Town.png";
 const playerImage = new Image();
 playerImage.src = "./images/playerDown.png";
 
-image.onload = () => {
+function animate() {
+  window.requestAnimationFrame(animate);
   c.drawImage(image, -735, -600);
 
   c.drawImage(
@@ -27,8 +28,9 @@ image.onload = () => {
     playerImage.width / 4,
     playerImage.height
   );
-};
+}
 
+animate();
 window.addEventListener("keydown", (e) => {
   switch (e.key) {
     case "w":
