@@ -10,16 +10,22 @@ c.fillRect(0, 0, canvas.width, canvas.height);
 const image = new Image();
 image.src = "./images/Pellet Town.png";
 
-c.drawImage(image, 0, 0);
-
 const playerImage = new Image();
 playerImage.src = "./images/playerDown.png";
 
 image.onload = () => {
-  c.drawImage(image, -750, -550);
-  c.drawImage(
-    playerImage,
-    canvas.width / 2 - playerImage.width / 2,
-    canvas.height / 2 - playerImage.height / 2
-  );
+  c.drawImage(image, -735, -600);
+  playerImage.onload = () => {
+    c.drawImage(
+      playerImage,
+      0,
+      0,
+      playerImage.width / 4,
+      playerImage.height,
+      canvas.width / 2 - playerImage.width / 2,
+      canvas.height / 2 - playerImage.height / 2,
+      playerImage.width / 4,
+      playerImage.height
+    );
+  };
 };
