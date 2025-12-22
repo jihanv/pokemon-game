@@ -15,3 +15,10 @@ c.drawImage(image, 0, 0);
 image.onload = () => {
   c.drawImage(image, -750, -550);
 };
+
+const playerImage = new Image();
+playerImage.src = "./images/playerDown.png";
+
+playerImage.onload = () => {
+  c.drawImage(playerImage, 0, 0);
+};
