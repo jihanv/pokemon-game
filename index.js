@@ -67,21 +67,36 @@ function animate() {
 animate();
 window.addEventListener("keydown", (e) => {
   switch (e.key) {
-    case "w":
     case "ArrowUp":
-      console.log("Pressed w");
+      keys.ArrowUp.pressed = true;
       break;
-    case "a":
     case "ArrowLeft":
-      console.log("Pressed a");
+      keys.ArrowLeft.pressed = true;
       break;
-    case "s":
     case "ArrowDown":
-      console.log("Pressed s");
+      keys.ArrowDown.pressed = true;
       break;
-    case "d":
     case "ArrowRight":
-      console.log("Pressed d");
+      keys.ArrowRight.pressed = true;
       break;
   }
+  console.log(keys);
+});
+
+window.addEventListener("keyup", (e) => {
+  switch (e.key) {
+    case "ArrowUp":
+      keys.ArrowUp.pressed = false;
+      break;
+    case "ArrowLeft":
+      keys.ArrowLeft.pressed = false;
+      break;
+    case "ArrowDown":
+      keys.ArrowDown.pressed = false;
+      break;
+    case "ArrowRight":
+      keys.ArrowRight.pressed = false;
+      break;
+  }
+  console.log(keys);
 });
