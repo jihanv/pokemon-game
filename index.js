@@ -20,7 +20,7 @@ class Sprite {
   }
 
   draw() {
-    c.drawImage(this.image, -735, -600);
+    c.drawImage(this.image, this.position.x, this.position.y);
   }
 }
 
@@ -62,6 +62,11 @@ function animate() {
     playerImage.width / 4,
     playerImage.height
   );
+
+  if (keys.ArrowUp.pressed) background.position.y += 3;
+  else if (keys.ArrowDown.pressed) background.position.y -= 3;
+  else if (keys.ArrowLeft.pressed) background.position.x += 3;
+  else if (keys.ArrowRight.pressed) background.position.x -= 3;
 }
 
 animate();
@@ -80,7 +85,6 @@ window.addEventListener("keydown", (e) => {
       keys.ArrowRight.pressed = true;
       break;
   }
-  console.log(keys);
 });
 
 window.addEventListener("keyup", (e) => {
@@ -98,5 +102,4 @@ window.addEventListener("keyup", (e) => {
       keys.ArrowRight.pressed = false;
       break;
   }
-  console.log(keys);
 });
