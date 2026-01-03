@@ -31,6 +31,22 @@ const background = new Sprite({
   },
   image: image,
 });
+
+const keys = {
+  ArrowUp: {
+    pressed: false,
+  },
+  ArrowLeft: {
+    pressed: false,
+  },
+  ArrowDown: {
+    pressed: false,
+  },
+  ArrowRight: {
+    pressed: false,
+  },
+};
+
 function animate() {
   window.requestAnimationFrame(animate);
   background.draw();
