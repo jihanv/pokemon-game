@@ -13,21 +13,30 @@ image.src = "./images/Pellet Town.png";
 const playerImage = new Image();
 playerImage.src = "./images/playerDown.png";
 
+class Sprite {
+  constructor({ position, velocity }) {
+    this.position = position;
+  }
+}
+
 function animate() {
   window.requestAnimationFrame(animate);
-  c.drawImage(image, -735, -600);
 
-  c.drawImage(
-    playerImage,
-    0,
-    0,
-    playerImage.width / 4,
-    playerImage.height,
-    canvas.width / 2 - playerImage.width / 8,
-    canvas.height / 2 - playerImage.height / 2,
-    playerImage.width / 4,
-    playerImage.height
-  );
+  image.onload = () => {
+    c.drawImage(image, -735, -600);
+
+    c.drawImage(
+      playerImage,
+      0,
+      0,
+      playerImage.width / 4,
+      playerImage.height,
+      canvas.width / 2 - playerImage.width / 8,
+      canvas.height / 2 - playerImage.height / 2,
+      playerImage.width / 4,
+      playerImage.height
+    );
+  };
 }
 
 animate();
