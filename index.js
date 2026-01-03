@@ -14,29 +14,38 @@ const playerImage = new Image();
 playerImage.src = "./images/playerDown.png";
 
 class Sprite {
-  constructor({ position, velocity }) {
+  constructor({ position, image }) {
     this.position = position;
+    this.image = image;
+  }
+
+  draw() {
+    c.drawImage(this.image, -735, -600);
   }
 }
 
+const background = new Sprite({
+  position: {
+    x: -735,
+    y: -600,
+  },
+  image: image,
+});
 function animate() {
   window.requestAnimationFrame(animate);
+  background.draw();
 
-  image.onload = () => {
-    c.drawImage(image, -735, -600);
-
-    c.drawImage(
-      playerImage,
-      0,
-      0,
-      playerImage.width / 4,
-      playerImage.height,
-      canvas.width / 2 - playerImage.width / 8,
-      canvas.height / 2 - playerImage.height / 2,
-      playerImage.width / 4,
-      playerImage.height
-    );
-  };
+  c.drawImage(
+    playerImage,
+    0,
+    0,
+    playerImage.width / 4,
+    playerImage.height,
+    canvas.width / 2 - playerImage.width / 8,
+    canvas.height / 2 - playerImage.height / 2,
+    playerImage.width / 4,
+    playerImage.height
+  );
 }
 
 animate();
