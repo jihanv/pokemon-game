@@ -1,4 +1,4 @@
-//2:07
+//2:41
 const canvas = document.querySelector("canvas");
 
 const c = canvas.getContext("2d");
@@ -24,6 +24,10 @@ class Boundary {
     c.fillRect(this.position.x, this.position.y, this.width, this.height);
   }
 }
+const offset = {
+  x: -735,
+  y: -600,
+};
 
 const boundaries = [];
 
@@ -33,8 +37,8 @@ collisionsMap.forEach((row, i) => {
       boundaries.push(
         new Boundary({
           position: {
-            x: j * Boundary.width,
-            y: i * Boundary.height,
+            x: j * Boundary.width + offset.x,
+            y: i * Boundary.height + offset.y,
           },
         })
       );
@@ -63,8 +67,8 @@ class Sprite {
 
 const background = new Sprite({
   position: {
-    x: -735,
-    y: -600,
+    x: offset.x,
+    y: offset.y,
   },
   image: image,
 });
@@ -83,11 +87,21 @@ const keys = {
     pressed: false,
   },
 };
+const testBoundary = new Boundary({
+  position: {
+    x: 400,
+    y: 400,
+  },
+});
 
+const movables = [background, testBoundary];
 function animate() {
   window.requestAnimationFrame(animate);
   background.draw();
-
+  // boundaries.forEach((boundary) => {
+  //   boundary.draw();
+  // });
+  testBoundary.draw();
   c.drawImage(
     playerImage,
     0,
@@ -100,13 +114,23 @@ function animate() {
     playerImage.height
   );
 
-  if (keys.ArrowUp.pressed && lastKey === "ArrowUp") background.position.y += 3;
-  else if (keys.ArrowDown.pressed && lastKey === "ArrowDown")
-    background.position.y -= 3;
-  else if (keys.ArrowLeft.pressed && lastKey === "ArrowLeft")
-    background.position.x += 3;
-  else if (keys.ArrowRight.pressed && lastKey === "ArrowRight")
-    background.position.x -= 3;
+  if (keys.ArrowUp.pressed && lastKey === "ArrowUp") {
+    movables.forEach((moveable) => {
+      moveable.position.y += 3;
+    });
+  } else if (keys.ArrowDown.pressed && lastKey === "ArrowDown") {
+    movables.forEach((moveable) => {
+      moveable.position.y -= 3;
+    });
+  } else if (keys.ArrowLeft.pressed && lastKey === "ArrowLeft") {
+    movables.forEach((moveable) => {
+      moveable.position.x += 3;
+    });
+  } else if (keys.ArrowRight.pressed && lastKey === "ArrowRight") {
+    movables.forEach((moveable) => {
+      moveable.position.x -= 3;
+    });
+  }
 }
 
 animate();
