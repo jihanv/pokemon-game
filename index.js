@@ -1,3 +1,5 @@
+//2:07
+
 const canvas = document.querySelector("canvas");
 
 const c = canvas.getContext("2d");
@@ -63,26 +65,36 @@ function animate() {
     playerImage.height
   );
 
-  if (keys.ArrowUp.pressed) background.position.y += 3;
-  else if (keys.ArrowDown.pressed) background.position.y -= 3;
-  else if (keys.ArrowLeft.pressed) background.position.x += 3;
-  else if (keys.ArrowRight.pressed) background.position.x -= 3;
+  if (keys.ArrowUp.pressed && lastKey === "ArrowUp") background.position.y += 3;
+  else if (keys.ArrowDown.pressed && lastKey === "ArrowDown")
+    background.position.y -= 3;
+  else if (keys.ArrowLeft.pressed && lastKey === "ArrowLeft")
+    background.position.x += 3;
+  else if (keys.ArrowRight.pressed && lastKey === "ArrowRight")
+    background.position.x -= 3;
 }
 
 animate();
+
+let lastKey = "";
+
 window.addEventListener("keydown", (e) => {
   switch (e.key) {
     case "ArrowUp":
       keys.ArrowUp.pressed = true;
+      lastKey = "ArrowUp";
       break;
     case "ArrowLeft":
       keys.ArrowLeft.pressed = true;
+      lastKey = "ArrowLeft";
       break;
     case "ArrowDown":
       keys.ArrowDown.pressed = true;
+      lastKey = "ArrowDown";
       break;
     case "ArrowRight":
       keys.ArrowRight.pressed = true;
+      lastKey = "ArrowRight";
       break;
   }
 });
