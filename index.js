@@ -1,5 +1,4 @@
 //2:07
-
 const canvas = document.querySelector("canvas");
 
 const c = canvas.getContext("2d");
@@ -12,6 +11,8 @@ for (let i = 0; i < collisions.length; i += 70) {
 }
 
 class Boundary {
+  static width = 48;
+  static height = 48;
   constructor({ position }) {
     this.position = position;
     this.width = 48;
@@ -25,6 +26,24 @@ class Boundary {
 }
 
 const boundaries = [];
+
+collisionsMap.forEach((row, i) => {
+  row.forEach((symbol, j) => {
+    if (symbol === 1025) {
+      boundaries.push(
+        new Boundary({
+          position: {
+            x: j * Boundary.width,
+            y: i * Boundary.height,
+          },
+        })
+      );
+    }
+  });
+});
+
+console.log(boundaries);
+
 const image = new Image();
 image.src = "./images/Pellet Town.png";
 
