@@ -10,6 +10,21 @@ const collisionsMap = [];
 for (let i = 0; i < collisions.length; i += 70) {
   collisionsMap.push(collisions.slice(i, i + 70));
 }
+
+class Boundary {
+  constructor({ position }) {
+    this.position = position;
+    this.width = 48;
+    this.height = 48;
+  }
+
+  draw() {
+    c.fillStyle = "red";
+    c.fillRect(this.position.x, this.position.y, this.width, this.height);
+  }
+}
+
+const boundaries = [];
 const image = new Image();
 image.src = "./images/Pellet Town.png";
 
