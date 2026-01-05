@@ -26,7 +26,7 @@ class Boundary {
 }
 const offset = {
   x: -735,
-  y: -600,
+  y: -640,
 };
 
 const boundaries = [];
@@ -57,6 +57,11 @@ class Sprite {
     this.position = position;
     this.image = image;
     this.frames = frames;
+
+    this.image.onload = () => {
+      this.width = this.image.width / this.frames.max;
+      this.height = this.image.height;
+    };
   }
 
   draw() {
@@ -110,25 +115,29 @@ const keys = {
     pressed: false,
   },
 };
-const testBoundary = new Boundary({
-  position: {
-    x: 400,
-    y: 400,
-  },
-});
 
-const movables = [background, testBoundary];
+const movables = [background, ...boundaries];
+function rectangularyCollision(rectangle1, rectangle2) {
+  return (
+    rectangle1.position.x + rectangle1.width >= rectangle2.position.x &&
+    rectangle1.position.x <= rectangle2.position.x + rectangle2.width &&
+    rectangle1.position.y <= rectangle2.position.y + rectangle2.height &&
+    rectangle1.position.y + rectangle1.height >= rectangle2.position.y
+  );
+}
 function animate() {
   window.requestAnimationFrame(animate);
   background.draw();
-  // boundaries.forEach((boundary) => {
-  //   boundary.draw();
-  // });
-  testBoundary.draw();
+  boundaries.forEach((boundary) => {
+    boundary.draw();
+
+    if (rectangularyCollision(player, boundary)) {
+      console.log("COLLIDING");
+    }
+  });
+
   player.draw();
 
-  if (player.position.x + player.width) {
-  }
   if (keys.ArrowUp.pressed && lastKey === "ArrowUp") {
     movables.forEach((moveable) => {
       moveable.position.y += 3;
