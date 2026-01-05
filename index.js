@@ -46,8 +46,6 @@ collisionsMap.forEach((row, i) => {
   });
 });
 
-console.log(boundaries);
-
 const image = new Image();
 image.src = "./images/Pellet Town.png";
 
@@ -55,15 +53,40 @@ const playerImage = new Image();
 playerImage.src = "./images/playerDown.png";
 
 class Sprite {
-  constructor({ position, image }) {
+  constructor({ position, image, frames = { max: 1 } }) {
     this.position = position;
     this.image = image;
+    this.frames = frames;
   }
 
   draw() {
-    c.drawImage(this.image, this.position.x, this.position.y);
+    c.drawImage(
+      this.image,
+      0,
+      0,
+      this.image.width / this.frames.max,
+      this.image.height,
+      this.position.x,
+      this.position.y,
+      // canvas.width / 2 - this.image.width / 8,
+      // canvas.height / 2 - this.image.height / 2,
+      // this.image.width / 4,
+      this.image.width / this.frames.max,
+      this.image.height
+    );
   }
 }
+
+const player = new Sprite({
+  position: {
+    x: canvas.width / 2 - 192 / 8,
+    y: canvas.height / 2 - 68 / 2,
+  },
+  image: playerImage,
+  frames: {
+    max: 4,
+  },
+});
 
 const background = new Sprite({
   position: {
@@ -102,18 +125,10 @@ function animate() {
   //   boundary.draw();
   // });
   testBoundary.draw();
-  c.drawImage(
-    playerImage,
-    0,
-    0,
-    playerImage.width / 4,
-    playerImage.height,
-    canvas.width / 2 - playerImage.width / 8,
-    canvas.height / 2 - playerImage.height / 2,
-    playerImage.width / 4,
-    playerImage.height
-  );
+  player.draw();
 
+  if (player.position.x + player.width) {
+  }
   if (keys.ArrowUp.pressed && lastKey === "ArrowUp") {
     movables.forEach((moveable) => {
       moveable.position.y += 3;
