@@ -1,6 +1,5 @@
 //3:24
 const canvas = document.querySelector("canvas");
-
 const c = canvas.getContext("2d");
 canvas.width = 1024;
 canvas.height = 576;
@@ -9,6 +8,12 @@ const collisionsMap = [];
 for (let i = 0; i < collisions.length; i += 70) {
   collisionsMap.push(collisions.slice(i, i + 70));
 }
+
+const battleZonesMap = [];
+for (let i = 0; i < battleZonesData.length; i += 70) {
+  battleZonesMap.push(battleZonesData.slice(i, i + 70));
+}
+// console.log(battleZonesMap);
 
 const offset = {
   x: -735,
@@ -21,6 +26,23 @@ collisionsMap.forEach((row, i) => {
   row.forEach((symbol, j) => {
     if (symbol === 1025) {
       boundaries.push(
+        new Boundary({
+          position: {
+            x: j * Boundary.width + offset.x,
+            y: i * Boundary.height + offset.y,
+          },
+        })
+      );
+    }
+  });
+});
+
+const battleZones = [];
+
+battleZonesMap.forEach((row, i) => {
+  row.forEach((symbol, j) => {
+    if (symbol === 1025) {
+      battleZones.push(
         new Boundary({
           position: {
             x: j * Boundary.width + offset.x,
@@ -97,7 +119,7 @@ const keys = {
   },
 };
 
-const movables = [background, ...boundaries, foreground];
+const movables = [background, ...boundaries, foreground, ...battleZones];
 function rectangularyCollision({ rectangle1, rectangle2 }) {
   return (
     rectangle1.position.x + rectangle1.width >= rectangle2.position.x &&
@@ -113,6 +135,9 @@ function animate() {
     boundary.draw();
   });
 
+  battleZones.forEach((battleZone) => {
+    battleZone.draw();
+  });
   player.draw();
 
   foreground.draw();
