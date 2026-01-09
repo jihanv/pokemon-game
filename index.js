@@ -142,6 +142,25 @@ function animate() {
 
   foreground.draw();
 
+  if (
+    keys.ArrowDown.pressed ||
+    keys.ArrowUp.pressed ||
+    keys.ArrowRight.pressed ||
+    keys.ArrowLeft.pressed
+  ) {
+    for (let i = 0; i < battleZones.length; i++) {
+      const battleZone = battleZones[i];
+      if (
+        rectangularyCollision({
+          rectangle1: player,
+          rectangle2: battleZone,
+        })
+      ) {
+        break;
+      }
+    }
+  }
+
   let moving = true;
   player.moving = false;
   if (keys.ArrowUp.pressed && lastKey === "ArrowUp") {
