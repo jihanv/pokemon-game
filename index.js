@@ -46,15 +46,8 @@ socket.addEventListener("message", (event) => {
   serverCam.x = msg.x;
   serverCam.y = msg.y;
 
-  // how far the server says the camera should move from where we are now
-  const dx = msg.x - background.position.x;
-  const dy = msg.y - background.position.y;
-
-  // move EVERYTHING by that delta so the scene stays aligned
-  movables.forEach((m) => {
-    m.position.x += dx;
-    m.position.y += dy;
-  });
+  targetCam.x = msg.x;
+  targetCam.y = msg.y;
 });
 //
 
@@ -157,7 +150,7 @@ const background = new Sprite({
   },
   image: image,
 });
-
+let targetCam = { x: background.position.x, y: background.position.y };
 const keys = {
   ArrowUp: {
     pressed: false,
@@ -184,6 +177,25 @@ function rectangularyCollision({ rectangle1, rectangle2 }) {
 }
 function animate() {
   window.requestAnimationFrame(animate);
+
+  //
+  c.clearRect(0, 0, canvas.width, canvas.height);
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  // how quickly you chase the server target (0.1–0.3 is a good start)
+  const t = 0.2;
+
+  const nextX = lerp(background.position.x, targetCam.x, t);
+  const nextY = lerp(background.position.y, targetCam.y, t);
+
+  const dx = nextX - background.position.x;
+  const dy = nextY - background.position.y;
+
+  movables.forEach((m) => {
+    m.position.x += dx;
+    m.position.y += dy;
+  });
+  //
   background.draw();
   boundaries.forEach((boundary) => {
     boundary.draw();
