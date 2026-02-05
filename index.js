@@ -1,8 +1,62 @@
-//3:24
+//3:40
 const canvas = document.querySelector("canvas");
 const c = canvas.getContext("2d");
 canvas.width = 1024;
 canvas.height = 576;
+let serverCam = { x: null, y: null };
+//
+const socket = new WebSocket("ws://localhost:8080");
+
+socket.addEventListener("open", () => {
+  console.log("✅ connected to websocket server");
+
+  // Send input 20 times/second (every 50ms)
+  setInterval(() => {
+    if (socket.readyState !== WebSocket.OPEN) return;
+
+    socket.send(
+      JSON.stringify({
+        type: "input",
+        up: keys.ArrowUp.pressed,
+        down: keys.ArrowDown.pressed,
+        left: keys.ArrowLeft.pressed,
+        right: keys.ArrowRight.pressed,
+        lastKey, // optional but helpful for debugging
+      }),
+    );
+  }, 50);
+});
+
+socket.addEventListener("message", (event) => {
+  console.log("from server:", event.data);
+});
+
+socket.addEventListener("close", () => {
+  console.log("disconnected from server");
+});
+
+socket.addEventListener("error", (err) => {
+  console.log("websocket error", err);
+});
+
+socket.addEventListener("message", (event) => {
+  const msg = JSON.parse(event.data);
+  if (msg.type !== "state") return;
+
+  serverCam.x = msg.x;
+  serverCam.y = msg.y;
+
+  // how far the server says the camera should move from where we are now
+  const dx = msg.x - background.position.x;
+  const dy = msg.y - background.position.y;
+
+  // move EVERYTHING by that delta so the scene stays aligned
+  movables.forEach((m) => {
+    m.position.x += dx;
+    m.position.y += dy;
+  });
+});
+//
 
 const collisionsMap = [];
 for (let i = 0; i < collisions.length; i += 70) {
@@ -31,7 +85,7 @@ collisionsMap.forEach((row, i) => {
             x: j * Boundary.width + offset.x,
             y: i * Boundary.height + offset.y,
           },
-        })
+        }),
       );
     }
   });
@@ -48,7 +102,7 @@ battleZonesMap.forEach((row, i) => {
             x: j * Boundary.width + offset.x,
             y: i * Boundary.height + offset.y,
           },
-        })
+        }),
       );
     }
   });
@@ -185,9 +239,10 @@ function animate() {
       }
     }
     if (moving)
-      movables.forEach((moveable) => {
-        moveable.position.y += 3;
-      });
+      // movables.forEach((moveable) => {
+      //   moveable.position.y += 3;
+      // });
+      console.log("hi");
   } else if (keys.ArrowDown.pressed && lastKey === "ArrowDown") {
     player.moving = true;
     player.image = player.sprites.down;
@@ -210,9 +265,10 @@ function animate() {
       }
     }
     if (moving)
-      movables.forEach((moveable) => {
-        moveable.position.y -= 3;
-      });
+      // movables.forEach((moveable) => {
+      //   moveable.position.y -= 3;
+      // });
+      console.log("hi");
   } else if (keys.ArrowLeft.pressed && lastKey === "ArrowLeft") {
     player.moving = true;
     player.image = player.sprites.left;
@@ -235,9 +291,10 @@ function animate() {
       }
     }
     if (moving)
-      movables.forEach((moveable) => {
-        moveable.position.x += 3;
-      });
+      // movables.forEach((moveable) => {
+      //   moveable.position.x += 3;
+      // });
+      console.log("hi");
   } else if (keys.ArrowRight.pressed && lastKey === "ArrowRight") {
     player.image = player.sprites.right;
     player.moving = true;
@@ -260,10 +317,30 @@ function animate() {
       }
     }
     if (moving)
-      movables.forEach((moveable) => {
-        moveable.position.x -= 3;
-      });
+      // movables.forEach((moveable) => {
+      //   moveable.position.x -= 3;
+      // });
+      console.log("hi");
   }
+  // debug overlay (put this at the bottom of animate())
+  c.save();
+  c.font = "16px monospace";
+  c.fillStyle = "white";
+  c.fillText(
+    `clientCam: ${background.position.x}, ${background.position.y}`,
+    10,
+    20,
+  );
+  c.fillText(`serverCam: ${serverCam.x}, ${serverCam.y}`, 10, 40);
+
+  if (serverCam.x !== null) {
+    c.fillText(
+      `diff: ${background.position.x - serverCam.x}, ${background.position.y - serverCam.y}`,
+      10,
+      60,
+    );
+  }
+  c.restore();
 }
 
 animate();
