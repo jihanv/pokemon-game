@@ -8,23 +8,18 @@ let serverCam = { x: null, y: null };
 const socket = new WebSocket("ws://localhost:8080");
 
 socket.addEventListener("open", () => {
-  console.log("✅ connected to websocket server");
+  console.log("connected to websocket server");
 
-  // Send input 20 times/second (every 50ms)
-  setInterval(() => {
-    if (socket.readyState !== WebSocket.OPEN) return;
-
-    socket.send(
-      JSON.stringify({
-        type: "input",
-        up: keys.ArrowUp.pressed,
-        down: keys.ArrowDown.pressed,
-        left: keys.ArrowLeft.pressed,
-        right: keys.ArrowRight.pressed,
-        lastKey, // optional but helpful for debugging
-      }),
-    );
-  }, 50);
+  // Send mapsize
+  socket.send(
+    JSON.stringify({
+      type: "mapInfo",
+      mapWidth,
+      mapHeight,
+      viewWidth: canvas.width, // 1024 :contentReference[oaicite:2]{index=2}
+      viewHeight: canvas.height, // 576  :contentReference[oaicite:3]{index=3}
+    }),
+  );
 });
 
 socket.addEventListener("message", (event) => {
@@ -100,6 +95,10 @@ battleZonesMap.forEach((row, i) => {
     }
   });
 });
+
+// compute map size
+const mapWidth = collisionsMap[0].length * Boundary.width;
+const mapHeight = collisionsMap.length * Boundary.height;
 
 const image = new Image();
 image.src = "./images/Pellet Town.png";
@@ -197,6 +196,7 @@ function animate() {
   });
   //
   background.draw();
+
   boundaries.forEach((boundary) => {
     boundary.draw();
   });
@@ -336,26 +336,52 @@ function animate() {
   }
   // debug overlay (put this at the bottom of animate())
   c.save();
-  c.font = "16px monospace";
-  c.fillStyle = "white";
-  c.fillText(
-    `clientCam: ${background.position.x}, ${background.position.y}`,
-    10,
-    20,
-  );
-  c.fillText(`serverCam: ${serverCam.x}, ${serverCam.y}`, 10, 40);
+  // c.font = "16px monospace";
+  // c.fillStyle = "white";
+  // c.fillText(
+  //   `clientCam: ${background.position.x}, ${background.position.y}`,
+  //   10,
+  //   20,
+  // );
+  // c.fillText(`serverCam: ${serverCam.x}, ${serverCam.y}`, 10, 40);
 
-  if (serverCam.x !== null) {
-    c.fillText(
-      `diff: ${background.position.x - serverCam.x}, ${background.position.y - serverCam.y}`,
-      10,
-      60,
-    );
-  }
+  // if (serverCam.x !== null) {
+  //   c.fillText(
+  //     `diff: ${background.position.x - serverCam.x}, ${background.position.y - serverCam.y}`,
+  //     10,
+  //     60,
+  //   );
+  // }
   c.restore();
 }
 
 animate();
+function sendInput() {
+  if (socket.readyState !== WebSocket.OPEN) return;
+
+  socket.send(
+    JSON.stringify({
+      type: "input",
+      up: keys.ArrowUp.pressed,
+      down: keys.ArrowDown.pressed,
+      left: keys.ArrowLeft.pressed,
+      right: keys.ArrowRight.pressed,
+      lastKey,
+    }),
+  );
+}
+
+window.addEventListener("blur", () => {
+  keys.ArrowUp.pressed = false;
+  keys.ArrowDown.pressed = false;
+  keys.ArrowLeft.pressed = false;
+  keys.ArrowRight.pressed = false;
+
+  // optional: also clear lastKey
+  // lastKey = "";
+
+  sendInput(); // tell server "all keys released"
+});
 
 let lastKey = "";
 
@@ -364,18 +390,22 @@ window.addEventListener("keydown", (e) => {
     case "ArrowUp":
       keys.ArrowUp.pressed = true;
       lastKey = "ArrowUp";
+      sendInput();
       break;
     case "ArrowLeft":
       keys.ArrowLeft.pressed = true;
       lastKey = "ArrowLeft";
+      sendInput();
       break;
     case "ArrowDown":
       keys.ArrowDown.pressed = true;
       lastKey = "ArrowDown";
+      sendInput();
       break;
     case "ArrowRight":
       keys.ArrowRight.pressed = true;
       lastKey = "ArrowRight";
+      sendInput();
       break;
   }
 });
@@ -384,15 +414,19 @@ window.addEventListener("keyup", (e) => {
   switch (e.key) {
     case "ArrowUp":
       keys.ArrowUp.pressed = false;
+      sendInput();
       break;
     case "ArrowLeft":
       keys.ArrowLeft.pressed = false;
+      sendInput();
       break;
     case "ArrowDown":
       keys.ArrowDown.pressed = false;
+      sendInput();
       break;
     case "ArrowRight":
       keys.ArrowRight.pressed = false;
+      sendInput();
       break;
   }
 });
