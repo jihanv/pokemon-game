@@ -22,18 +22,39 @@ const wss = new WebSocket.Server({ port: 8080 });
 
 wss.on("connection", (ws) => {
   console.log("client connected");
-
+  let seq = 0;
   // camera offset starts where your client starts
   let x = -735;
   let y = -640;
 
+  let mapInfo = {
+    mapWidth: MAP_COLS * TILE_SIZE,
+    mapHeight: (collisions.length / MAP_COLS) * TILE_SIZE,
+    viewWidth: 1024,
+    viewHeight: 576,
+  };
+  console.log("🗺️ server mapInfo:", mapInfo);
+
   const playerRect = {
-    x: 1024 / 2 - 192 / 8, // same math you used for player.position.x
-    y: 576 / 2 - 68 / 2, // same math you used for player.position.y
-    w: 48, // player sprite width in world collisions (good approximation)
-    h: 68, // player sprite height
+    x: 0,
+    y: 0,
+    w: 48,
+    h: 68,
   };
 
+  function updatePlayerRect() {
+    // matches your client: x = canvas.width/2 - 192/8, y = canvas.height/2 - 68/2
+    playerRect.x = mapInfo.viewWidth / 2 - 192 / 8;
+    playerRect.y = mapInfo.viewHeight / 2 - 68 / 2;
+  }
+
+  // call once using current mapInfo defaults
+  updatePlayerRect();
+  const MIN_X = mapInfo.viewWidth - mapInfo.mapWidth;
+  const MAX_X = 0;
+  const MIN_Y = mapInfo.viewHeight - mapInfo.mapHeight;
+  const MAX_Y = 0;
+  console.log("limits after viewInfo:", { MIN_X, MAX_X, MIN_Y, MAX_Y });
   function hitsWall(camX, camY) {
     // convert screen rect -> world rect using camera offset
     const worldX = playerRect.x - camX;
@@ -58,24 +79,23 @@ wss.on("connection", (ws) => {
   const input = { up: false, down: false, left: false, right: false };
 
   // send initial state once
-  ws.send(JSON.stringify({ type: "state", x, y }));
+  ws.send(JSON.stringify({ type: "state", x, y, seq: ++seq }));
 
-  let mapInfo = null;
   ws.on("message", (data) => {
     const msg = JSON.parse(data.toString());
 
-    // ✅ put mapInfo handling here
-    if (msg.type === "mapInfo") {
-      mapInfo = msg;
+    if (msg.type === "viewInfo") {
+      mapInfo.viewWidth = msg.viewWidth;
+      mapInfo.viewHeight = msg.viewHeight;
 
+      updatePlayerRect();
+      console.log("🖥️ updated view:", mapInfo.viewWidth, mapInfo.viewHeight);
+      console.log("🧍 playerRect:", playerRect);
       const MIN_X = mapInfo.viewWidth - mapInfo.mapWidth;
       const MAX_X = 0;
       const MIN_Y = mapInfo.viewHeight - mapInfo.mapHeight;
       const MAX_Y = 0;
-
-      console.log("mapInfo:", mapInfo);
-      console.log("limits:", { MIN_X, MAX_X, MIN_Y, MAX_Y });
-
+      console.log("limits after viewInfo:", { MIN_X, MAX_X, MIN_Y, MAX_Y });
       return;
     }
 
@@ -88,65 +108,76 @@ wss.on("connection", (ws) => {
     input.right = !!msg.right;
   });
 
-  const speed = 9; // per tick
+  const SPEED_PX_PER_SEC = 180; // same as 9px per 50ms (9 * 20 = 180)
+  let lastTime = Date.now();
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
   const tick = setInterval(() => {
+    const now = Date.now();
+    let dt = (now - lastTime) / 1000; // seconds
+    lastTime = now;
+
+    // cap dt so a lag spike doesn't jump too far
+    dt = Math.min(dt, 0.1);
+
+    const step = SPEED_PX_PER_SEC * dt;
+
+    // --- NEW: substeps ---
+    const MAX_SUBSTEP = 3; // pixels per mini-step
+    const steps = Math.ceil(step / MAX_SUBSTEP);
+    const subStep = step / steps;
+
     let moved = false;
 
-    let nextX = x;
-    let nextY = y;
+    for (let i = 0; i < steps; i++) {
+      // try X
+      let nextX = x;
+      if (input.left) {
+        nextX += subStep;
+        moved = true;
+      }
+      if (input.right) {
+        nextX -= subStep;
+        moved = true;
+      }
 
-    // try X move first
-    if (input.left) {
-      nextX += speed;
-      moved = true;
+      // clamp X
+      if (mapInfo) {
+        const MIN_X = mapInfo.viewWidth - mapInfo.mapWidth;
+        const MAX_X = 0;
+        nextX = clamp(nextX, MIN_X, MAX_X);
+      }
+
+      // commit X only if not hitting wall
+      if (!hitsWall(nextX, y)) x = nextX;
+
+      // try Y
+      let nextY = y;
+      if (input.up) {
+        nextY += subStep;
+        moved = true;
+      }
+      if (input.down) {
+        nextY -= subStep;
+        moved = true;
+      }
+
+      // clamp Y
+      if (mapInfo) {
+        const MIN_Y = mapInfo.viewHeight - mapInfo.mapHeight;
+        const MAX_Y = 0;
+        nextY = clamp(nextY, MIN_Y, MAX_Y);
+      }
+
+      // commit Y only if not hitting wall (use updated x)
+      if (!hitsWall(x, nextY)) y = nextY;
     }
-    if (input.right) {
-      nextX -= speed;
-      moved = true;
-    }
-
-    // clamp X to map edges (same as before)
-    if (mapInfo) {
-      const MIN_X = mapInfo.viewWidth - mapInfo.mapWidth;
-      const MAX_X = 0;
-      nextX = clamp(nextX, MIN_X, MAX_X);
-    }
-
-    // if X move hits a wall, cancel X move
-    if (hitsWall(nextX, y)) nextX = x;
-
-    // try Y move
-    if (input.up) {
-      nextY += speed;
-      moved = true;
-    }
-    if (input.down) {
-      nextY -= speed;
-      moved = true;
-    }
-
-    // clamp Y to map edges
-    if (mapInfo) {
-      const MIN_Y = mapInfo.viewHeight - mapInfo.mapHeight;
-      const MAX_Y = 0;
-      nextY = clamp(nextY, MIN_Y, MAX_Y);
-    }
-
-    // if Y move hits a wall, cancel Y move
-    if (hitsWall(nextX, nextY)) nextY = y;
-
-    // commit
-    x = nextX;
-    y = nextY;
 
     if (moved && ws.readyState === ws.OPEN) {
       ws.send(JSON.stringify({ type: "state", x, y }));
     }
-  }, 50); // 20 times/sec
-
+  }, 50);
   ws.on("close", () => {
     clearInterval(tick);
     console.log("👋 client disconnected");

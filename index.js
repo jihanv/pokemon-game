@@ -4,11 +4,54 @@ const c = canvas.getContext("2d");
 canvas.width = 1024;
 canvas.height = 576;
 let serverCam = { x: null, y: null };
+let lastSeq = null;
 //
+
+function fitCanvasToWindow() {
+  let scale = Math.min(
+    window.innerWidth / canvas.width,
+    window.innerHeight / canvas.height,
+  );
+
+  if (scale >= 1) scale = Math.floor(scale);
+
+  // ✅ THIS is the missing part:
+  canvas.style.width = `${canvas.width * scale}px`;
+  canvas.style.height = `${canvas.height * scale}px`;
+
+  canvas.style.position = "absolute";
+  canvas.style.left = "50%";
+  canvas.style.top = "50%";
+  canvas.style.transform = "translate(-50%, -50%)";
+
+  console.log("fitCanvasToWindow", {
+    scale,
+    cssW: canvas.style.width,
+    cssH: canvas.style.height,
+  });
+}
+fitCanvasToWindow();
 const socket = new WebSocket("ws://localhost:8080");
+
+const collisionsMap = [];
+for (let i = 0; i < collisions.length; i += 70) {
+  collisionsMap.push(collisions.slice(i, i + 70));
+}
+// compute map size
+const mapWidth = collisionsMap[0].length * Boundary.width;
+const mapHeight = collisionsMap.length * Boundary.height;
 
 socket.addEventListener("open", () => {
   console.log("connected to websocket server");
+
+  sendViewInfo();
+  socket.send(
+    JSON.stringify({
+      type: "viewInfo",
+      viewWidth: canvas.width,
+      viewHeight: canvas.height,
+    }),
+  );
 
   // Send mapsize
   socket.send(
@@ -22,10 +65,6 @@ socket.addEventListener("open", () => {
   );
 });
 
-socket.addEventListener("message", (event) => {
-  console.log("from server:", event.data);
-});
-
 socket.addEventListener("close", () => {
   console.log("disconnected from server");
 });
@@ -35,21 +74,33 @@ socket.addEventListener("error", (err) => {
 });
 
 socket.addEventListener("message", (event) => {
-  const msg = JSON.parse(event.data);
-  if (msg.type !== "state") return;
+  let msg;
+  try {
+    msg = JSON.parse(event.data);
+  } catch {
+    console.log("non-json from server:", event.data);
+    return;
+  }
 
-  serverCam.x = msg.x;
-  serverCam.y = msg.y;
+  // optional: log only state messages (comment out if noisy)
+  // if (msg.type === "state") console.log("state:", msg);
 
-  targetCam.x = msg.x;
-  targetCam.y = msg.y;
+  if (msg.type === "state") {
+    serverCam.x = msg.x;
+    serverCam.y = msg.y;
+
+    targetCam.x = msg.x;
+    targetCam.y = msg.y;
+    lastSeq = msg.seq;
+    if (msg.seq != null) {
+      if (lastSeq != null && msg.seq !== lastSeq + 1) {
+        console.log("⚠️ missed/out-of-order state?", { lastSeq, got: msg.seq });
+      }
+      lastSeq = msg.seq;
+    }
+  }
 });
 //
-
-const collisionsMap = [];
-for (let i = 0; i < collisions.length; i += 70) {
-  collisionsMap.push(collisions.slice(i, i + 70));
-}
 
 const battleZonesMap = [];
 for (let i = 0; i < battleZonesData.length; i += 70) {
@@ -95,10 +146,6 @@ battleZonesMap.forEach((row, i) => {
     }
   });
 });
-
-// compute map size
-const mapWidth = collisionsMap[0].length * Boundary.width;
-const mapHeight = collisionsMap.length * Boundary.height;
 
 const image = new Image();
 image.src = "./images/Pellet Town.png";
@@ -229,129 +276,24 @@ function animate() {
 
   let moving = true;
   player.moving = false;
-  if (keys.ArrowUp.pressed && lastKey === "ArrowUp") {
-    player.moving = true;
+  // --- player animation based on input (no collisions here) ---
+  player.moving = false;
+
+  if (keys.ArrowUp.pressed) {
     player.image = player.sprites.up;
-    for (let i = 0; i < boundaries.length; i++) {
-      const boundary = boundaries[i];
-      if (
-        rectangularyCollision({
-          rectangle1: player,
-          rectangle2: {
-            ...boundary,
-            position: {
-              x: boundary.position.x,
-              y: boundary.position.y + 3,
-            },
-          },
-        })
-      ) {
-        moving = false;
-        break;
-      }
-    }
-    if (moving)
-      // movables.forEach((moveable) => {
-      //   moveable.position.y += 3;
-      // });
-      console.log("hi");
-  } else if (keys.ArrowDown.pressed && lastKey === "ArrowDown") {
     player.moving = true;
+  } else if (keys.ArrowDown.pressed) {
     player.image = player.sprites.down;
-    for (let i = 0; i < boundaries.length; i++) {
-      const boundary = boundaries[i];
-      if (
-        rectangularyCollision({
-          rectangle1: player,
-          rectangle2: {
-            ...boundary,
-            position: {
-              x: boundary.position.x,
-              y: boundary.position.y - 3,
-            },
-          },
-        })
-      ) {
-        moving = false;
-        break;
-      }
-    }
-    if (moving)
-      // movables.forEach((moveable) => {
-      //   moveable.position.y -= 3;
-      // });
-      console.log("hi");
-  } else if (keys.ArrowLeft.pressed && lastKey === "ArrowLeft") {
     player.moving = true;
+  } else if (keys.ArrowLeft.pressed) {
     player.image = player.sprites.left;
-    for (let i = 0; i < boundaries.length; i++) {
-      const boundary = boundaries[i];
-      if (
-        rectangularyCollision({
-          rectangle1: player,
-          rectangle2: {
-            ...boundary,
-            position: {
-              x: boundary.position.x + 3,
-              y: boundary.position.y,
-            },
-          },
-        })
-      ) {
-        moving = false;
-        break;
-      }
-    }
-    if (moving)
-      // movables.forEach((moveable) => {
-      //   moveable.position.x += 3;
-      // });
-      console.log("hi");
-  } else if (keys.ArrowRight.pressed && lastKey === "ArrowRight") {
+    player.moving = true;
+  } else if (keys.ArrowRight.pressed) {
     player.image = player.sprites.right;
     player.moving = true;
-    for (let i = 0; i < boundaries.length; i++) {
-      const boundary = boundaries[i];
-      if (
-        rectangularyCollision({
-          rectangle1: player,
-          rectangle2: {
-            ...boundary,
-            position: {
-              x: boundary.position.x - 3,
-              y: boundary.position.y,
-            },
-          },
-        })
-      ) {
-        moving = false;
-        break;
-      }
-    }
-    if (moving)
-      // movables.forEach((moveable) => {
-      //   moveable.position.x -= 3;
-      // });
-      console.log("hi");
   }
   // debug overlay (put this at the bottom of animate())
   c.save();
-  // c.font = "16px monospace";
-  // c.fillStyle = "white";
-  // c.fillText(
-  //   `clientCam: ${background.position.x}, ${background.position.y}`,
-  //   10,
-  //   20,
-  // );
-  // c.fillText(`serverCam: ${serverCam.x}, ${serverCam.y}`, 10, 40);
-
-  // if (serverCam.x !== null) {
-  //   c.fillText(
-  //     `diff: ${background.position.x - serverCam.x}, ${background.position.y - serverCam.y}`,
-  //     10,
-  //     60,
-  //   );
-  // }
   c.restore();
 }
 
@@ -367,6 +309,20 @@ function sendInput() {
       left: keys.ArrowLeft.pressed,
       right: keys.ArrowRight.pressed,
       lastKey,
+    }),
+  );
+}
+
+function sendViewInfo() {
+  console.log("📤 sending viewInfo:", canvas.width, canvas.height); // <- add this
+
+  if (socket.readyState !== WebSocket.OPEN) return;
+
+  socket.send(
+    JSON.stringify({
+      type: "viewInfo",
+      viewWidth: canvas.width,
+      viewHeight: canvas.height,
     }),
   );
 }
@@ -429,4 +385,9 @@ window.addEventListener("keyup", (e) => {
       sendInput();
       break;
   }
+});
+
+window.addEventListener("resize", () => {
+  fitCanvasToWindow();
+  sendViewInfo();
 });
