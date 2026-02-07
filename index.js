@@ -6,7 +6,7 @@ canvas.height = 576;
 let serverCam = { x: null, y: null };
 let lastSeq = null;
 let myId = null; // put this near the top of your file once
-
+let playersFromServer = []; // [{id, worldX, worldY}, ...]
 //
 
 function fitCanvasToWindow() {
@@ -86,12 +86,13 @@ socket.addEventListener("message", (event) => {
 
   if (msg.type === "init") {
     myId = msg.id;
-    console.log("✅ connected as id:", myId);
+    console.log("CONNECTED as id:", myId);
     return;
   }
 
   if (msg.type === "players") {
-    console.log("👥 players:", msg.players.length, msg.players);
+    playersFromServer = msg.players; // store it for rendering
+    console.log("PLAYERS:", msg.players.length, msg.players);
     return;
   }
 
@@ -262,8 +263,22 @@ function animate() {
   battleZones.forEach((battleZone) => {
     battleZone.draw();
   });
-  player.draw();
 
+  // NEW: draw other players as rectangles
+  c.save();
+  c.fillStyle = "rgba(0, 0, 255, 0.8)"; // visible blue
+  playersFromServer.forEach((p) => {
+    if (p.id === myId) return; // don't draw yourself as a rectangle
+
+    // Convert WORLD -> SCREEN using *your* camera (background position)
+    const screenX = p.worldX + background.position.x;
+    const screenY = p.worldY + background.position.y;
+
+    c.fillRect(screenX, screenY, 48, 68); // same size as your playerRect on server
+  });
+  c.restore();
+
+  player.draw();
   foreground.draw();
 
   if (
