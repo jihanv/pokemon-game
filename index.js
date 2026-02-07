@@ -5,6 +5,8 @@ canvas.width = 1024;
 canvas.height = 576;
 let serverCam = { x: null, y: null };
 let lastSeq = null;
+let myId = null; // put this near the top of your file once
+
 //
 
 function fitCanvasToWindow() {
@@ -79,6 +81,12 @@ socket.addEventListener("message", (event) => {
     msg = JSON.parse(event.data);
   } catch {
     console.log("non-json from server:", event.data);
+    return;
+  }
+
+  if (msg.type === "init") {
+    myId = msg.id;
+    console.log("✅ connected as id:", myId);
     return;
   }
 

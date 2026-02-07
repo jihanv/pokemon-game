@@ -20,10 +20,23 @@ const WebSocket = require("ws");
 
 const wss = new WebSocket.Server({ port: 8080 });
 
+// NEW: global player registry
+let nextPlayerId = 1;
+const players = new Map(); // id -> ws
+
 wss.on("connection", (ws) => {
   console.log("client connected");
+
+  const id = String(nextPlayerId++);
+  players.set(id, ws);
+
+  console.log("client connected:", id, "total:", players.size);
+
   let seq = 0;
+  ws.send(JSON.stringify({ type: "init", id })); // NEW: tell client its id
+
   // camera offset starts where your client starts
+
   let x = -735;
   let y = -640;
 
@@ -178,9 +191,12 @@ wss.on("connection", (ws) => {
       ws.send(JSON.stringify({ type: "state", x, y, seq: ++seq }));
     }
   }, 50);
+
   ws.on("close", () => {
     clearInterval(tick);
-    console.log("👋 client disconnected");
+
+    players.delete(id);
+    console.log("👋 client disconnected:", id, "total:", players.size);
   });
 });
 
