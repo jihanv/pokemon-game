@@ -92,7 +92,11 @@ wss.on("connection", (ws) => {
   const input = { up: false, down: false, left: false, right: false };
 
   // send initial state once
-  ws.send(JSON.stringify({ type: "state", x, y, seq: ++seq }));
+  const worldX = playerRect.x - x;
+  const worldY = playerRect.y - y;
+  ws.send(
+    JSON.stringify({ type: "state", id, x, y, worldX, worldY, seq: ++seq }),
+  );
 
   ws.on("message", (data) => {
     const msg = JSON.parse(data.toString());
@@ -188,7 +192,11 @@ wss.on("connection", (ws) => {
     }
 
     if (moved && ws.readyState === ws.OPEN) {
-      ws.send(JSON.stringify({ type: "state", x, y, seq: ++seq }));
+      const worldX = playerRect.x - x;
+      const worldY = playerRect.y - y;
+      ws.send(
+        JSON.stringify({ type: "state", id, x, y, worldX, worldY, seq: ++seq }),
+      );
     }
   }, 50);
 

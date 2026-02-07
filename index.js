@@ -94,6 +94,8 @@ socket.addEventListener("message", (event) => {
   // if (msg.type === "state") console.log("state:", msg);
 
   if (msg.type === "state") {
+    console.log("state for", msg.id, "world:", msg.worldX, msg.worldY);
+
     serverCam.x = msg.x;
     serverCam.y = msg.y;
 
