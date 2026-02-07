@@ -195,12 +195,30 @@ const player = new Sprite({
 });
 
 // Add another player (use a NEW Image object so onload doesn't get overwritten)
+// Other player images (NEW Image objects so nothing overwrites onload)
+const otherUpImage = new Image();
+otherUpImage.src = "./images/playerUp.png";
+
 const otherDownImage = new Image();
 otherDownImage.src = "./images/playerDown.png";
 
+const otherLeftImage = new Image();
+otherLeftImage.src = "./images/playerLeft.png";
+
+const otherRightImage = new Image();
+otherRightImage.src = "./images/playerRight.png";
+
+// A simple lookup table: dir -> image
+const otherSprites = {
+  up: otherUpImage,
+  down: otherDownImage,
+  left: otherLeftImage,
+  right: otherRightImage,
+};
+
 const otherPlayerSprite = new Sprite({
   position: { x: 0, y: 0 },
-  image: otherDownImage,
+  image: otherDownImage, // default
   frames: { max: 4 },
 });
 //
@@ -283,6 +301,9 @@ function animate() {
     const screenY = p.worldY + background.position.y;
 
     // move our reusable sprite "cursor" and draw it
+    // pick the right image based on direction (fallback to down)
+    otherPlayerSprite.image = otherSprites[p.dir] || otherSprites.down;
+
     otherPlayerSprite.position.x = screenX;
     otherPlayerSprite.position.y = screenY;
     otherPlayerSprite.draw();

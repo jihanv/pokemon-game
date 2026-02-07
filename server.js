@@ -220,7 +220,6 @@ wss.on("connection", (ws) => {
       const worldX = playerRect.x - x;
       const worldY = playerRect.y - y;
 
-      // update shared player positions
       // NEW: compute facing direction from lastKey
       if (lastKey === "ArrowUp") dir = "up";
       else if (lastKey === "ArrowDown") dir = "down";
