@@ -193,6 +193,18 @@ const player = new Sprite({
     right: playerRightImage,
   },
 });
+
+// Add another player
+// Add another player (use a NEW Image object so onload doesn't get overwritten)
+const otherDownImage = new Image();
+otherDownImage.src = "./images/playerDown.png";
+
+const otherPlayerSprite = new Sprite({
+  position: { x: 0, y: 0 },
+  image: otherDownImage,
+  frames: { max: 4 },
+});
+//
 const foreground = new Sprite({
   position: {
     x: offset.x,
@@ -264,21 +276,21 @@ function animate() {
     battleZone.draw();
   });
 
-  // NEW: draw other players as rectangles
-  c.save();
-  c.fillStyle = "rgba(0, 0, 255, 0.8)"; // visible blue
+  // NEW: draw other players as sprites (simple)
   playersFromServer.forEach((p) => {
-    if (p.id === myId) return; // don't draw yourself as a rectangle
+    if (p.id === myId) return;
 
-    // Convert WORLD -> SCREEN using *your* camera (background position)
     const screenX = p.worldX + background.position.x;
     const screenY = p.worldY + background.position.y;
 
-    c.fillRect(screenX, screenY, 48, 68); // same size as your playerRect on server
+    // move our reusable sprite "cursor" and draw it
+    otherPlayerSprite.position.x = screenX;
+    otherPlayerSprite.position.y = screenY;
+    otherPlayerSprite.draw();
   });
-  c.restore();
-
+  //
   player.draw();
+
   foreground.draw();
 
   if (
