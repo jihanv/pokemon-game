@@ -31,6 +31,7 @@ function broadcastPlayers() {
     id,
     worldX: p.worldX,
     worldY: p.worldY,
+    dir: p.dir,
   }));
 
   const payload = JSON.stringify({ type: "players", players: list });
@@ -109,6 +110,9 @@ wss.on("connection", (ws) => {
   // store the *current* input state
   const input = { up: false, down: false, left: false, right: false };
 
+  let lastKey = "ArrowDown";
+  let dir = "down";
+
   // send initial state once
   const worldX = playerRect.x - x;
   const worldY = playerRect.y - y;
@@ -141,6 +145,9 @@ wss.on("connection", (ws) => {
     input.down = !!msg.down;
     input.left = !!msg.left;
     input.right = !!msg.right;
+
+    // NEW: keep lastKey if the client sent it
+    if (msg.lastKey) lastKey = msg.lastKey;
   });
 
   const SPEED_PX_PER_SEC = 180; // same as 9px per 50ms (9 * 20 = 180)
@@ -214,7 +221,13 @@ wss.on("connection", (ws) => {
       const worldY = playerRect.y - y;
 
       // update shared player positions
-      playerData.set(id, { worldX, worldY });
+      // NEW: compute facing direction from lastKey
+      if (lastKey === "ArrowUp") dir = "up";
+      else if (lastKey === "ArrowDown") dir = "down";
+      else if (lastKey === "ArrowLeft") dir = "left";
+      else if (lastKey === "ArrowRight") dir = "right";
+
+      playerData.set(id, { worldX, worldY, dir });
 
       // send your normal state to THIS client
       ws.send(

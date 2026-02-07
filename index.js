@@ -194,7 +194,6 @@ const player = new Sprite({
   },
 });
 
-// Add another player
 // Add another player (use a NEW Image object so onload doesn't get overwritten)
 const otherDownImage = new Image();
 otherDownImage.src = "./images/playerDown.png";
