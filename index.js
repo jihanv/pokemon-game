@@ -90,8 +90,10 @@ socket.addEventListener("message", (event) => {
     return;
   }
 
-  // optional: log only state messages (comment out if noisy)
-  // if (msg.type === "state") console.log("state:", msg);
+  if (msg.type === "players") {
+    console.log("👥 players:", msg.players.length, msg.players);
+    return;
+  }
 
   if (msg.type === "state") {
     console.log("state for", msg.id, "world:", msg.worldX, msg.worldY);

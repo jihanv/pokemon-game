@@ -24,6 +24,24 @@ const wss = new WebSocket.Server({ port: 8080 });
 let nextPlayerId = 1;
 const players = new Map(); // id -> ws
 
+const playerData = new Map(); // id -> { worldX, worldY }
+
+function broadcastPlayers() {
+  const list = Array.from(playerData.entries()).map(([id, p]) => ({
+    id,
+    worldX: p.worldX,
+    worldY: p.worldY,
+  }));
+
+  const payload = JSON.stringify({ type: "players", players: list });
+
+  for (const client of wss.clients) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(payload);
+    }
+  }
+}
+
 wss.on("connection", (ws) => {
   console.log("client connected");
 
@@ -194,9 +212,17 @@ wss.on("connection", (ws) => {
     if (moved && ws.readyState === ws.OPEN) {
       const worldX = playerRect.x - x;
       const worldY = playerRect.y - y;
+
+      // update shared player positions
+      playerData.set(id, { worldX, worldY });
+
+      // send your normal state to THIS client
       ws.send(
         JSON.stringify({ type: "state", id, x, y, worldX, worldY, seq: ++seq }),
       );
+
+      // broadcast all players to EVERY client
+      broadcastPlayers();
     }
   }, 50);
 
@@ -204,6 +230,11 @@ wss.on("connection", (ws) => {
     clearInterval(tick);
 
     players.delete(id);
+
+    // NEW:
+    playerData.delete(id);
+    broadcastPlayers();
+
     console.log("👋 client disconnected:", id, "total:", players.size);
   });
 });
