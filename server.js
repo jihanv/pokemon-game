@@ -175,7 +175,7 @@ wss.on("connection", (ws) => {
     }
 
     if (moved && ws.readyState === ws.OPEN) {
-      ws.send(JSON.stringify({ type: "state", x, y }));
+      ws.send(JSON.stringify({ type: "state", x, y, seq: ++seq }));
     }
   }, 50);
   ws.on("close", () => {

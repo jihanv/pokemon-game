@@ -45,24 +45,24 @@ socket.addEventListener("open", () => {
   console.log("connected to websocket server");
 
   sendViewInfo();
-  socket.send(
-    JSON.stringify({
-      type: "viewInfo",
-      viewWidth: canvas.width,
-      viewHeight: canvas.height,
-    }),
-  );
+  // socket.send(
+  //   JSON.stringify({
+  //     type: "viewInfo",
+  //     viewWidth: canvas.width,
+  //     viewHeight: canvas.height,
+  //   }),
+  // );
 
   // Send mapsize
-  socket.send(
-    JSON.stringify({
-      type: "mapInfo",
-      mapWidth,
-      mapHeight,
-      viewWidth: canvas.width, // 1024 :contentReference[oaicite:2]{index=2}
-      viewHeight: canvas.height, // 576  :contentReference[oaicite:3]{index=3}
-    }),
-  );
+  // socket.send(
+  //   JSON.stringify({
+  //     type: "mapInfo",
+  //     mapWidth,
+  //     mapHeight,
+  //     viewWidth: canvas.width, // 1024 :contentReference[oaicite:2]{index=2}
+  //     viewHeight: canvas.height, // 576  :contentReference[oaicite:3]{index=3}
+  //   }),
+  // );
 });
 
 socket.addEventListener("close", () => {
@@ -91,7 +91,6 @@ socket.addEventListener("message", (event) => {
 
     targetCam.x = msg.x;
     targetCam.y = msg.y;
-    lastSeq = msg.seq;
     if (msg.seq != null) {
       if (lastSeq != null && msg.seq !== lastSeq + 1) {
         console.log("⚠️ missed/out-of-order state?", { lastSeq, got: msg.seq });
