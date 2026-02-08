@@ -48,11 +48,11 @@ function broadcastPlayers() {
   }
 }
 setInterval(broadcastPlayers, 50);
-// const SPAWN_POINTS = [
-//   { worldX: -800, worldY: -800 }, // player 2
-//   { worldX: 580, worldY: 500 }, // player 3
-//   { worldX: 420, worldY: 500 }, // player 4
-// ];
+const SPAWN_POINTS = [
+  { worldX: -800, worldY: -800 }, // player 2
+  { worldX: 580, worldY: 500 }, // player 3
+  { worldX: 420, worldY: 500 }, // player 4
+];
 wss.on("connection", (ws) => {
   console.log("client connected");
 
