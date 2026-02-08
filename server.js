@@ -129,17 +129,17 @@ wss.on("connection", (ws) => {
   let x, y;
 
   if (id === "1") {
-    // Player 1: fixed, legacy spawn
+    // Player 1 spawn
     x = -735;
     y = -640;
+  } else if (id === "2") {
+    // Player 2 spawn (fixed, independent)
+    x = -800;
+    y = -800;
   } else {
-    // Player 2+: independent spawn points
-    const spawnIndex = (Number(id) - 2) % SPAWN_POINTS.length;
-    const spawn = SPAWN_POINTS[spawnIndex];
-
-    // convert world position → camera offset
-    x = playerRect.x - spawn.worldX;
-    y = playerRect.y - spawn.worldY;
+    // Fallback for any other players (optional)
+    x = -735;
+    y = -640;
   }
   //
 
