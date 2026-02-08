@@ -18,7 +18,10 @@ console.log("🧱 first 10 solid tile indices:", solidTiles.slice(0, 10));
 
 const WebSocket = require("ws");
 
-const wss = new WebSocket.Server({ port: 8080 });
+const PORT = process.env.PORT || 8080;
+
+// Some hosts want you listening on all interfaces (0.0.0.0)
+const wss = new WebSocket.Server({ port: PORT, host: "0.0.0.0" });
 
 // NEW: global player registry
 let nextPlayerId = 1;
@@ -32,6 +35,7 @@ function broadcastPlayers() {
     worldX: p.worldX,
     worldY: p.worldY,
     dir: p.dir,
+    moving: p.moving,
   }));
 
   const payload = JSON.stringify({ type: "players", players: list });
@@ -42,6 +46,7 @@ function broadcastPlayers() {
     }
   }
 }
+setInterval(broadcastPlayers, 50);
 
 wss.on("connection", (ws) => {
   console.log("client connected");
@@ -56,8 +61,8 @@ wss.on("connection", (ws) => {
 
   // camera offset starts where your client starts
 
-  let x = -735;
-  let y = -640;
+  // let x = -735;
+  // let y = -640;
 
   let mapInfo = {
     mapWidth: MAP_COLS * TILE_SIZE,
@@ -80,8 +85,56 @@ wss.on("connection", (ws) => {
     playerRect.y = mapInfo.viewHeight / 2 - 68 / 2;
   }
 
+  function hitsPlayer(camX, camY) {
+    // my candidate world rect if camera were at (camX, camY)
+    const myWorldX = playerRect.x - camX;
+    const myWorldY = playerRect.y - camY;
+
+    const myLeft = myWorldX;
+    const myRight = myWorldX + playerRect.w;
+    const myTop = myWorldY;
+    const myBottom = myWorldY + playerRect.h;
+
+    for (const [otherId, p] of playerData.entries()) {
+      if (otherId === id) continue; // don't collide with myself
+      if (!p) continue;
+
+      const otherLeft = p.worldX;
+      const otherRight = p.worldX + playerRect.w;
+      const otherTop = p.worldY;
+      const otherBottom = p.worldY + playerRect.h;
+
+      const overlaps =
+        myLeft < otherRight &&
+        myRight > otherLeft &&
+        myTop < otherBottom &&
+        myBottom > otherTop;
+
+      if (overlaps) return true;
+    }
+
+    return false;
+  }
+
   // call once using current mapInfo defaults
   updatePlayerRect();
+  // camera offset starts where your client starts
+  // BUT: each player gets a different spawn world position to avoid overlapping
+
+  let x = -735;
+  let y = -640;
+
+  // If this is NOT the first player, spawn them a bit north (up)
+  const idNum = Number(id); // "1" -> 1, "2" -> 2, etc.
+  const NORTH_OFFSET = -80; // pixels (try 20 / 40 / 60)
+
+  if (idNum >= 2) {
+    // "north" means smaller worldY, which means bigger camera y
+    y = y + NORTH_OFFSET * (idNum - 1);
+  }
+  //
+
+  //
   const MIN_X = mapInfo.viewWidth - mapInfo.mapWidth;
   const MAX_X = 0;
   const MIN_Y = mapInfo.viewHeight - mapInfo.mapHeight;
@@ -192,7 +245,7 @@ wss.on("connection", (ws) => {
       }
 
       // commit X only if not hitting wall
-      if (!hitsWall(nextX, y)) x = nextX;
+      if (!hitsWall(nextX, y) && !hitsPlayer(nextX, y)) x = nextX;
 
       // try Y
       let nextY = y;
@@ -213,28 +266,39 @@ wss.on("connection", (ws) => {
       }
 
       // commit Y only if not hitting wall (use updated x)
-      if (!hitsWall(x, nextY)) y = nextY;
+      if (!hitsWall(x, nextY) && !hitsPlayer(x, nextY)) y = nextY;
     }
 
-    if (moved && ws.readyState === ws.OPEN) {
-      const worldX = playerRect.x - x;
-      const worldY = playerRect.y - y;
+    // compute world position every tick
+    const worldX = playerRect.x - x;
+    const worldY = playerRect.y - y;
 
-      // NEW: compute facing direction from lastKey
-      if (lastKey === "ArrowUp") dir = "up";
-      else if (lastKey === "ArrowDown") dir = "down";
-      else if (lastKey === "ArrowLeft") dir = "left";
-      else if (lastKey === "ArrowRight") dir = "right";
+    // keep your existing direction logic (same as you already have)
+    if (lastKey === "ArrowUp") dir = "up";
+    else if (lastKey === "ArrowDown") dir = "down";
+    else if (lastKey === "ArrowLeft") dir = "left";
+    else if (lastKey === "ArrowRight") dir = "right";
 
-      playerData.set(id, { worldX, worldY, dir });
+    // update shared player data every tick (so others learn when you stop)
+    playerData.set(id, { worldX, worldY, dir, moving: moved });
 
-      // send your normal state to THIS client
-      ws.send(
-        JSON.stringify({ type: "state", id, x, y, worldX, worldY, seq: ++seq }),
-      );
+    if (ws.readyState === ws.OPEN) {
+      // keep your bandwidth-saving idea: only send personal state when moved
+      if (moved) {
+        ws.send(
+          JSON.stringify({
+            type: "state",
+            id,
+            x,
+            y,
+            worldX,
+            worldY,
+            seq: ++seq,
+          }),
+        );
+      }
 
-      // broadcast all players to EVERY client
-      broadcastPlayers();
+      // but broadcast players every tick so "moving: false" gets sent too
     }
   }, 50);
 

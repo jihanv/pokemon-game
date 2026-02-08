@@ -7,6 +7,9 @@ let serverCam = { x: null, y: null };
 let lastSeq = null;
 let myId = null; // put this near the top of your file once
 let playersFromServer = []; // [{id, worldX, worldY}, ...]
+let lastMovingById = new Map(); // id -> true/false
+const otherRender = new Map();
+
 //
 
 function fitCanvasToWindow() {
@@ -91,8 +94,49 @@ socket.addEventListener("message", (event) => {
   }
 
   if (msg.type === "players") {
-    playersFromServer = msg.players; // store it for rendering
-    console.log("PLAYERS:", msg.players.length, msg.players);
+    playersFromServer = msg.players;
+
+    // Update "targets" for smoothing
+    const seen = new Set();
+
+    msg.players.forEach((p) => {
+      seen.add(p.id);
+
+      // keep your debug log (optional)
+      const prevMoving = lastMovingById.get(p.id);
+      if (prevMoving !== p.moving) {
+        console.log("moving changed:", p.id, "=>", p.moving);
+        lastMovingById.set(p.id, p.moving);
+      }
+
+      // ignore myself
+      if (p.id === myId) return;
+
+      const s = otherRender.get(p.id);
+      if (!s) {
+        // first time seeing this player: start render position at target
+        otherRender.set(p.id, {
+          x: p.worldX,
+          y: p.worldY,
+          tx: p.worldX,
+          ty: p.worldY,
+          dir: p.dir,
+          moving: p.moving,
+        });
+      } else {
+        // update targets; render (x,y) will ease toward them each frame
+        s.tx = p.worldX;
+        s.ty = p.worldY;
+        s.dir = p.dir;
+        s.moving = p.moving;
+      }
+    });
+
+    // Remove players that disappeared (disconnected)
+    for (const id of otherRender.keys()) {
+      if (!seen.has(id)) otherRender.delete(id);
+    }
+
     return;
   }
 
@@ -294,20 +338,29 @@ function animate() {
   });
 
   // NEW: draw other players as sprites (simple)
+
   playersFromServer.forEach((p) => {
     if (p.id === myId) return;
 
-    const screenX = p.worldX + background.position.x;
-    const screenY = p.worldY + background.position.y;
+    const s = otherRender.get(p.id);
+    if (!s) return;
 
-    // move our reusable sprite "cursor" and draw it
-    // pick the right image based on direction (fallback to down)
-    otherPlayerSprite.image = otherSprites[p.dir] || otherSprites.down;
+    // Smooth: move render position toward the latest server target
+    const smoothT = 0.25; // try 0.15 (smoother) to 0.35 (snappier)
+    s.x = lerp(s.x, s.tx, smoothT);
+    s.y = lerp(s.y, s.ty, smoothT);
+
+    const screenX = s.x + background.position.x;
+    const screenY = s.y + background.position.y;
+
+    otherPlayerSprite.image = otherSprites[s.dir] || otherSprites.down;
+    otherPlayerSprite.moving = !!s.moving;
 
     otherPlayerSprite.position.x = screenX;
     otherPlayerSprite.position.y = screenY;
     otherPlayerSprite.draw();
   });
+
   //
   player.draw();
 
