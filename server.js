@@ -126,16 +126,20 @@ wss.on("connection", (ws) => {
   // camera offset starts where your client starts
   // BUT: each player gets a different spawn world position to avoid overlapping
 
-  let x = -800;
-  let y = -800;
+  let x, y;
 
-  // If this is NOT the first player, spawn them a bit north (up)
-  const idNum = Number(id); // "1" -> 1, "2" -> 2, etc.
-  const NORTH_OFFSET = -80; // pixels (try 20 / 40 / 60)
+  if (id === "1") {
+    // Player 1: fixed, legacy spawn
+    x = -735;
+    y = -640;
+  } else {
+    // Player 2+: independent spawn points
+    const spawnIndex = (Number(id) - 2) % SPAWN_POINTS.length;
+    const spawn = SPAWN_POINTS[spawnIndex];
 
-  if (idNum >= 2) {
-    // "north" means smaller worldY, which means bigger camera y
-    y = y + NORTH_OFFSET * (idNum - 1);
+    // convert world position → camera offset
+    x = playerRect.x - spawn.worldX;
+    y = playerRect.y - spawn.worldY;
   }
   //
 
