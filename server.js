@@ -19,6 +19,7 @@ console.log("🧱 first 10 solid tile indices:", solidTiles.slice(0, 10));
 const WebSocket = require("ws");
 
 const PORT = process.env.PORT || 8080;
+// const PORT = 8080;
 
 // Some hosts want you listening on all interfaces (0.0.0.0)
 const wss = new WebSocket.Server({ port: PORT, host: "0.0.0.0" });
@@ -47,7 +48,11 @@ function broadcastPlayers() {
   }
 }
 setInterval(broadcastPlayers, 50);
-
+// const SPAWN_POINTS = [
+//   { worldX: -800, worldY: -800 }, // player 2
+//   { worldX: 580, worldY: 500 }, // player 3
+//   { worldX: 420, worldY: 500 }, // player 4
+// ];
 wss.on("connection", (ws) => {
   console.log("client connected");
 
@@ -121,8 +126,8 @@ wss.on("connection", (ws) => {
   // camera offset starts where your client starts
   // BUT: each player gets a different spawn world position to avoid overlapping
 
-  let x = -735;
-  let y = -640;
+  let x = -800;
+  let y = -800;
 
   // If this is NOT the first player, spawn them a bit north (up)
   const idNum = Number(id); // "1" -> 1, "2" -> 2, etc.

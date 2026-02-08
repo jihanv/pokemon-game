@@ -136,7 +136,11 @@ socket.addEventListener("message", (event) => {
 
     // Remove players that disappeared (disconnected)
     for (const id of otherRender.keys()) {
-      if (!seen.has(id)) otherRender.delete(id);
+      if (!seen.has(id)) {
+        otherRender.delete(id);
+        lastMovingById.delete(id); // clean up movement state
+        console.log("🧹 removed player", id);
+      }
     }
 
     return;
