@@ -36,8 +36,10 @@ function fitCanvasToWindow() {
   });
 }
 fitCanvasToWindow();
-const socket = new WebSocket("ws://localhost:8080");
 
+// const socket = new WebSocket("ws://localhost:8080");
+
+const socket = new WebSocket("wss://pokemon-game-production.up.railway.app");
 const collisionsMap = [];
 for (let i = 0; i < collisions.length; i += 70) {
   collisionsMap.push(collisions.slice(i, i + 70));
