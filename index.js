@@ -359,12 +359,18 @@ function animate() {
   nextCamY = Math.max(MIN_Y, Math.min(MAX_Y, nextCamY));
 
   // Commit prediction
+
+  // Commit prediction
   targetCam.x = nextCamX;
   targetCam.y = nextCamY;
 
-  // Apply camera delta to all movables (no smoothing for self)
-  const dx = targetCam.x - background.position.x;
-  const dy = targetCam.y - background.position.y;
+  // ✅ Snap render camera to whole pixels to avoid jitter
+  const snappedCamX = Math.round(targetCam.x);
+  const snappedCamY = Math.round(targetCam.y);
+
+  // Apply camera delta to all movables
+  const dx = snappedCamX - background.position.x;
+  const dy = snappedCamY - background.position.y;
 
   movables.forEach((m) => {
     m.position.x += dx;
@@ -393,9 +399,8 @@ function animate() {
     const smoothT = 0.25; // try 0.15 (smoother) to 0.35 (snappier)
     s.x = lerp(s.x, s.tx, smoothT);
     s.y = lerp(s.y, s.ty, smoothT);
-
-    const screenX = s.x + background.position.x;
-    const screenY = s.y + background.position.y;
+    const screenX = Math.round(s.x + background.position.x);
+    const screenY = Math.round(s.y + background.position.y);
 
     otherPlayerSprite.image = otherSprites[s.dir] || otherSprites.down;
     otherPlayerSprite.moving = !!s.moving;
