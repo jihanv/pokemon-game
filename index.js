@@ -160,16 +160,29 @@ socket.addEventListener("message", (event) => {
       lastSeq = msg.seq;
     }
 
-    // ✅ reconciliation: only correct if we drifted noticeably
-    // (small drift is normal due to timing differences)
-    const DRIFT_SNAP_PX = 10; // tune 6–16
+    const DRIFT_SNAP_PX = 32; // bigger threshold to avoid constant snapping
+
     const dx = serverCam.x - targetCam.x;
     const dy = serverCam.y - targetCam.y;
 
-    if (Math.abs(dx) > DRIFT_SNAP_PX || Math.abs(dy) > DRIFT_SNAP_PX) {
-      // snap to server
-      targetCam.x = serverCam.x;
-      targetCam.y = serverCam.y;
+    // ✅ Only reconcile when you are NOT actively holding movement keys.
+    // This removes the "bumpy" feel from periodic server snaps.
+    const isMoving =
+      keys.ArrowUp.pressed ||
+      keys.ArrowDown.pressed ||
+      keys.ArrowLeft.pressed ||
+      keys.ArrowRight.pressed;
+
+    if (!isMoving) {
+      // snap only if we're pretty far off
+      if (Math.abs(dx) > DRIFT_SNAP_PX || Math.abs(dy) > DRIFT_SNAP_PX) {
+        targetCam.x = serverCam.x;
+        targetCam.y = serverCam.y;
+      } else {
+        // small errors: gently drift back (prevents tiny jitter)
+        targetCam.x += dx * 0.15;
+        targetCam.y += dy * 0.15;
+      }
     }
   }
 });
