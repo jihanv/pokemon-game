@@ -9,7 +9,8 @@ let myId = null; // put this near the top of your file once
 let playersFromServer = []; // [{id, worldX, worldY}, ...]
 let lastMovingById = new Map(); // id -> true/false
 const otherRender = new Map();
-
+const SPEED_PX_PER_SEC = 180; // must match server SPEED_PX_PER_SEC :contentReference[oaicite:3]{index=3}
+let lastFrameTime = performance.now();
 //
 
 function fitCanvasToWindow() {
@@ -147,18 +148,28 @@ socket.addEventListener("message", (event) => {
   }
 
   if (msg.type === "state") {
-    console.log("state for", msg.id, "world:", msg.worldX, msg.worldY);
-
+    // authoritative camera from server (truth)
     serverCam.x = msg.x;
     serverCam.y = msg.y;
 
-    targetCam.x = msg.x;
-    targetCam.y = msg.y;
+    // sequence bookkeeping (optional)
     if (msg.seq != null) {
       if (lastSeq != null && msg.seq !== lastSeq + 1) {
         console.log("⚠️ missed/out-of-order state?", { lastSeq, got: msg.seq });
       }
       lastSeq = msg.seq;
+    }
+
+    // ✅ reconciliation: only correct if we drifted noticeably
+    // (small drift is normal due to timing differences)
+    const DRIFT_SNAP_PX = 10; // tune 6–16
+    const dx = serverCam.x - targetCam.x;
+    const dy = serverCam.y - targetCam.y;
+
+    if (Math.abs(dx) > DRIFT_SNAP_PX || Math.abs(dy) > DRIFT_SNAP_PX) {
+      // snap to server
+      targetCam.x = serverCam.x;
+      targetCam.y = serverCam.y;
     }
   }
 });
@@ -319,14 +330,41 @@ function animate() {
   c.clearRect(0, 0, canvas.width, canvas.height);
   const lerp = (a, b, t) => a + (b - a) * t;
 
-  // how quickly you chase the server target (0.1–0.3 is a good start)
-  const t = 0.2;
+  const now = performance.now();
+  let dt = (now - lastFrameTime) / 1000;
+  lastFrameTime = now;
 
-  const nextX = lerp(background.position.x, targetCam.x, t);
-  const nextY = lerp(background.position.y, targetCam.y, t);
+  // cap dt so a tab-switch doesn't jump you
+  dt = Math.min(dt, 0.05);
 
-  const dx = nextX - background.position.x;
-  const dy = nextY - background.position.y;
+  const step = SPEED_PX_PER_SEC * dt;
+
+  // Predict next camera based on input.
+  // NOTE: your world uses "camera offsets" where moving left increases cam.x (same as server).
+  let nextCamX = targetCam.x;
+  let nextCamY = targetCam.y;
+
+  if (keys.ArrowLeft.pressed) nextCamX += step;
+  if (keys.ArrowRight.pressed) nextCamX -= step;
+  if (keys.ArrowUp.pressed) nextCamY += step;
+  if (keys.ArrowDown.pressed) nextCamY -= step;
+
+  // Clamp camera exactly like the server does
+  const MIN_X = canvas.width - mapWidth;
+  const MAX_X = 0;
+  const MIN_Y = canvas.height - mapHeight;
+  const MAX_Y = 0;
+
+  nextCamX = Math.max(MIN_X, Math.min(MAX_X, nextCamX));
+  nextCamY = Math.max(MIN_Y, Math.min(MAX_Y, nextCamY));
+
+  // Commit prediction
+  targetCam.x = nextCamX;
+  targetCam.y = nextCamY;
+
+  // Apply camera delta to all movables (no smoothing for self)
+  const dx = targetCam.x - background.position.x;
+  const dy = targetCam.y - background.position.y;
 
   movables.forEach((m) => {
     m.position.x += dx;

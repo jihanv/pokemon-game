@@ -293,7 +293,10 @@ wss.on("connection", (ws) => {
 
     if (ws.readyState === ws.OPEN) {
       // keep your bandwidth-saving idea: only send personal state when moved
-      if (moved) {
+      const HEARTBEAT_EVERY = 5; // 5 ticks * 50ms = 250ms
+      const shouldSend = moved || seq % HEARTBEAT_EVERY === 0;
+
+      if (shouldSend) {
         ws.send(
           JSON.stringify({
             type: "state",
@@ -305,6 +308,8 @@ wss.on("connection", (ws) => {
             seq: ++seq,
           }),
         );
+      } else {
+        seq++; // still advance seq so heartbeat math stays consistent
       }
 
       // but broadcast players every tick so "moving: false" gets sent too
